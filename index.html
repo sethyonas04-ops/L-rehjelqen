@@ -2,22 +2,33 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Smart Skoleassistent med AI</title>
+<title>Smart Skoleassistent</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
-h1 { color: #333; }
-.section { margin-bottom: 30px; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-button { margin-top: 10px; padding: 10px 20px; cursor: pointer; }
-input, select, textarea { padding: 5px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-#aiAnswer { white-space: pre-wrap; }
+body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(to bottom right, #f9f9f9, #cce7ff); margin: 0; }
+header { background: #4A90E2; color: white; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.2);}
+.container { padding: 20px; }
+.view { display: none; animation: fadeIn 0.5s; }
+.active { display: block; }
+button { background: #4A90E2; color: white; border: none; padding: 12px 20px; margin: 5px 0; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+button:hover { background: #357ABD; }
+input, select, textarea { padding: 10px; width: 100%; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+textarea { resize: vertical; }
+.icon { margin-right: 8px; }
+h2 { color: #333; }
+.card { background: white; border-radius: 12px; padding: 20px; margin: 10px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.15);}
+#aiAnswer, #quizArea, #vocabArea { white-space: pre-wrap; margin-top: 10px; }
+@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
 </style>
 </head>
 <body>
-<h1>Smart Skoleassistent</h1>
+<header>🎓 Smart Skoleassistent</header>
+<div class="container">
 
-<div class="section" id="setup">
+<!-- View 1: Velg trinn -->
+<div id="viewGrade" class="view active">
   <h2>Velg trinn</h2>
-  <select id="grade">
+  <select id="gradeSelect">
     <option value="1">1. trinn</option>
     <option value="2">2. trinn</option>
     <option value="3">3. trinn</option>
@@ -29,17 +40,34 @@ input, select, textarea { padding: 5px; margin: 5px 0; width: 100%; box-sizing: 
     <option value="9">9. trinn</option>
     <option value="10">10. trinn</option>
   </select>
-  <button onclick="startAssistant()">Start AI-assistent</button>
+  <button onclick="goToMenu()">Neste <i class="fas fa-arrow-right"></i></button>
 </div>
 
-<div class="section" id="aiSection" style="display:none;">
+<!-- View 2: Hovedmeny -->
+<div id="viewMenu" class="view">
+  <h2>Velg funksjon</h2>
+  <div class="card">
+    <button onclick="showView('viewAI')"><i class="fas fa-robot icon"></i> AI-hjelp</button>
+  </div>
+  <div class="card">
+    <button onclick="showView('viewQuiz')"><i class="fas fa-question-circle icon"></i> Quiz</button>
+  </div>
+  <div class="card">
+    <button onclick="showView('viewVocab')"><i class="fas fa-book icon"></i> Gloseprøve</button>
+  </div>
+</div>
+
+<!-- View 3: AI -->
+<div id="viewAI" class="view">
   <h2>AI-hjelp</h2>
   <textarea id="aiQuestion" placeholder="Skriv spørsmålet ditt her..."></textarea>
-  <button onclick="answerQuestion()">Få svar</button>
+  <button onclick="answerQuestion()">Få svar <i class="fas fa-lightbulb"></i></button>
   <p id="aiAnswer"></p>
+  <button onclick="backToMenu()">← Tilbake</button>
 </div>
 
-<div class="section" id="quizSection">
+<!-- View 4: Quiz -->
+<div id="viewQuiz" class="view">
   <h2>Quiz</h2>
   <select id="quizSubject">
     <option value="matematikk">Matematikk</option>
@@ -55,32 +83,45 @@ input, select, textarea { padding: 5px; margin: 5px 0; width: 100%; box-sizing: 
     <option value="idrett">Idrett</option>
   </select>
   <input type="text" id="quizTopic" placeholder="Tema for quiz (f.eks. brøk, fotosyntese)">
-  <button onclick="startQuiz()">Start Quiz</button>
+  <button onclick="startQuiz()">Start Quiz <i class="fas fa-play"></i></button>
   <div id="quizArea"></div>
+  <button onclick="backToMenu()">← Tilbake</button>
 </div>
 
-<div class="section" id="gloserSection">
+<!-- View 5: Gloseprøve -->
+<div id="viewVocab" class="view">
   <h2>Gloseprøve</h2>
   <textarea id="vocabList" placeholder="Skriv gloser her, ett per linje, norsk:engelsk"></textarea>
-  <button onclick="startVocabTest()">Start gloseprøve</button>
+  <button onclick="startVocabTest()">Start gloseprøve <i class="fas fa-graduation-cap"></i></button>
   <div id="vocabArea"></div>
+  <button onclick="backToMenu()">← Tilbake</button>
+</div>
+
 </div>
 
 <script>
-// --- AI-assistent ---
 let gradeLevel;
-function startAssistant() {
-  gradeLevel = document.getElementById('grade').value;
-  document.getElementById('aiSection').style.display = 'block';
-  alert(`AI-assistenten er nå tilpasset ${gradeLevel}. trinn`);
+let vocabList = [];
+let currentVocab = 0;
+
+// --- View management ---
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function backToMenu() { showView('viewMenu'); }
+function goToMenu() { 
+  gradeLevel = document.getElementById('gradeSelect').value;
+  alert(`Valgt trinn: ${gradeLevel}. Trinn`);
+  showView('viewMenu'); 
 }
 
+// --- AI-assistent ---
 async function answerQuestion() {
   const question = document.getElementById('aiQuestion').value.trim();
   const answerElem = document.getElementById('aiAnswer');
   answerElem.innerText = "Laster svar...";
 
-  // OpenAI API-kall
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -111,7 +152,6 @@ function startQuiz() {
   const subject = document.getElementById('quizSubject').value;
   const topic = document.getElementById('quizTopic').value.trim();
   const quizArea = document.getElementById('quizArea');
-
   quizArea.innerHTML = `<p>Quiz i ${subject} - Tema: ${topic}</p>`;
   for (let i = 1; i <= 3; i++) {
     quizArea.innerHTML += `<p>${i}. [Simulert spørsmål om ${topic}]</p>`;
@@ -119,9 +159,6 @@ function startQuiz() {
 }
 
 // --- Gloseprøve ---
-let vocabList = [];
-let currentVocab = 0;
-
 function startVocabTest() {
   vocabList = document.getElementById('vocabList').value.trim().split('\n').map(line => {
     const parts = line.split(':');
