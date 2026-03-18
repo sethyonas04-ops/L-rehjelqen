@@ -6,9 +6,7 @@
 <title>Lærehjelp EXTREME AI</title>
 
 <style>
-:root{
---bg:#0f172a;--card:#1e293b;--accent:#4a90e2;--green:#22c55e;--red:#ef4444;
-}
+:root{--bg:#0f172a;--card:#1e293b;--accent:#4a90e2;--green:#22c55e;--red:#ef4444}
 body{margin:0;font-family:Segoe UI;background:var(--bg);color:white}
 .hidden{display:none}
 section{padding:20px;max-width:1300px;margin:auto;height:100vh;display:flex;flex-direction:column}
@@ -25,13 +23,15 @@ input{flex:1;padding:12px;border-radius:12px;border:none}
 button{padding:10px;border:none;border-radius:10px;background:var(--accent);color:white}
 
 .big{background:var(--card);padding:25px;border-radius:20px;margin-top:20px}
+
+.backBtn{position:fixed;bottom:15px;left:15px;background:#334155}
 </style>
 </head>
 
 <body>
 
 <section id="start">
-<h1>🚀 Lærehjelp AI EXTREME</h1>
+<h1>🚀 Lærehjelp AI</h1>
 <div class="grid" id="grades"></div>
 </section>
 
@@ -45,39 +45,39 @@ button{padding:10px;border:none;border-radius:10px;background:var(--accent);colo
 </section>
 
 <section id="chat" class="hidden">
-<h2>Super AI Lærer</h2>
+<h2>AI Lærer</h2>
 <div id="messages"></div>
 <div style="display:flex;gap:10px">
 <input id="input">
 <button onclick="send()">Send</button>
 </div>
-<button onclick="back()">←</button>
+<button class="backBtn" onclick="back()">←</button>
 </section>
 
 <section id="quiz" class="hidden">
 <h2>Quiz</h2>
 <div class="big" id="quizBox"></div>
 <button onclick="startQuiz()">Neste</button>
-<button onclick="back()">←</button>
+<button class="backBtn" onclick="back()">←</button>
 </section>
 
 <section id="game" class="hidden">
 <h2>🔥 Speed Game</h2>
 <div class="big" id="gameBox"></div>
 <button onclick="startGame()">Start</button>
-<button onclick="back()">←</button>
+<button class="backBtn" onclick="back()">←</button>
 </section>
 
 <script>
-let grade=1;
+let grade=4; // starter på 4 siden 1-3 er fjernet
 let locked=false;
 let correct="";
 let explanation="";
 let streak=0;
 let speedStart=0;
 
-// TRINN
-for(let i=1;i<=10;i++){
+// TRINN (4-10)
+for(let i=4;i<=10;i++){
 let b=document.createElement("div");
 b.className="card";
 b.innerText=i+". trinn";
@@ -91,42 +91,48 @@ function goChat(){show("chat")}
 function goQuiz(){show("quiz");startQuiz()}
 function goGame(){show("game")}
 
-// SUPER AI ENGINE (~400 lines logic style)
+// FORKLARINGER BASERT PÅ NIVÅ
+function getExplanation(topic){
+if(grade<=5) return `Enkelt forklart: ${topic} betyr noe grunnleggende. Tenk steg for steg og bruk eksempler.`;
+if(grade<=7) return `Forklaring: ${topic} handler om et viktig begrep. Du må forstå hvordan det brukes i oppgaver.`;
+return `Avansert forklaring: ${topic} er et faglig begrep. Du må forstå sammenhenger og bruke det i problemløsning.`;
+}
+
+function getMathHelp(text){
+if(text.includes("+")) return "Tips: Legg sammen tallene ett og ett.";
+if(text.includes("x")||text.includes("*") ) return "Tips: Ganging er gjentatt addisjon.";
+if(text.includes("-")) return "Tips: Trekk fra det minste tallet fra det største.";
+return "Prøv å bryte opp oppgaven steg for steg.";
+}
+
+// AI
 function smartAI(input){
 input=input.toLowerCase();
 
-// forståelse
-if(input.includes("hva er")||input.includes("forklar")||input.includes("hvordan")){
-return explainConcept(input);
-}
-
-// fallback
-return "Jeg forstår spørsmålet ditt. La oss bryte det ned sammen steg for steg.";
-}
-
-function explainConcept(q){
-let topic=q.split(" ").slice(-1)[0];
-
-let easy="Dette betyr enkelt: "+topic;
-let hard="Dette er en mer avansert forklaring av "+topic+" med detaljer.";
-
-let explanationText=grade<=4?easy:hard;
+let topic=input.split(" ").slice(-1)[0];
+let baseExplain=getExplanation(topic);
+let mathHelp=getMathHelp(input);
 
 correct=topic;
-explanation="Du må forstå hva " + topic + " betyr.";
+explanation=baseExplain + " " + mathHelp;
 
 setTimeout(()=>{
-add("La oss sjekke om du forstår 👇","ai");
+add("Jeg forklarer først så du forstår 👇","ai");
+setTimeout(()=>{
+add(baseExplain,"ai");
+setTimeout(()=>{
+add("💡 " + mathHelp,"ai");
 setTimeout(()=>{
 add("Kontrollspørsmål: Hva betyr '"+topic+"'?","ai");
 locked=true;
 },1200);
-},1500);
+},1200);
+},1000);
+},800);
 
-return explanationText;
+return "La oss lære dette sammen.";
 }
 
-// CHAT
 function send(){
 let text=input.value;
 if(!text)return;
@@ -152,122 +158,69 @@ add(response,"ai");
 
 function add(t,type){let d=document.createElement("div");d.className="msg "+type;d.innerText=t;messages.appendChild(d);messages.scrollTop=9999}
 
-// QUIZ SYSTEM (1000+ spørsmål generert dynamisk)
-let quiz = [];
-
+// QUIZ GENERATOR (1000+)
+let quiz=[];
 function generateQuiz(){
-    quiz = [];
-
-    // Matte spørsmål
-    for(let i=0;i<400;i++){
-        let a=Math.floor(Math.random()*50);
-        let b=Math.floor(Math.random()*50);
-        quiz.push({q:`Hva er ${a}+${b}?`,a:(a+b).toString()});
-    }
-
-    // Multiplikasjon
-    for(let i=0;i<200;i++){
-        let a=Math.floor(Math.random()*20);
-        let b=Math.floor(Math.random()*20);
-        quiz.push({q:`Hva er ${a} x ${b}?`,a:(a*b).toString()});
-    }
-
-    // Enkle fakta
-    const facts=[
-        ["Hva er hovedstaden i Norge?","oslo"],
-        ["Hva betyr hello?","hei"],
-        ["Hva er vann?","h2o"],
-        ["Hva er solen?","stjerne"],
-        ["Hva er 1+1","2"],
-        ["Hva er 10+10","20"]
-    ];
-
-    for(let i=0;i<400;i++){
-        let f=facts[Math.floor(Math.random()*facts.length)];
-        quiz.push({q:f[0],a:f[1]});
-    }
+quiz=[];
+for(let i=0;i<1000;i++){
+let a=Math.floor(Math.random()*50);
+let b=Math.floor(Math.random()*50);
+quiz.push({q:`Hva er ${a}+${b}?`,a:(a+b).toString(),tip:"Legg sammen tallene"});
 }
-
+}
 generateQuiz();
 
 function startQuiz(){
-    let q=quiz[Math.floor(Math.random()*quiz.length)];
-    quizBox.innerHTML=`
-    <p>${q.q}</p>
-    <input id='qi'>
-    <button onclick="checkQuiz('${q.a}')">Svar</button>
-    `;
+let q=quiz[Math.floor(Math.random()*quiz.length)];
+quizBox.innerHTML=`<p>${q.q}</p><p>💡 ${q.tip}</p><input id='qi'><button onclick="checkQuiz('${q.a}','${q.tip}')">Svar</button>`;
 }
 
-function checkQuiz(a){
-    let v=document.getElementById("qi").value.toLowerCase();
-    if(v.includes(a)){
-        quizBox.innerHTML="Riktig!";
-    }else{
-        quizBox.innerHTML="Feil! Prøv igjen";
-    }
+function checkQuiz(a,tip){
+let v=document.getElementById("qi").value;
+if(v==a){quizBox.innerHTML="Riktig!"}
+else{quizBox.innerHTML="Feil ❌ Tips: "+tip}
 }
 
-// SPEED GAME (1000+ oppgaver)
+// GAME
 let gameQuestions=[];
-
 function generateGame(){
-    gameQuestions=[];
-
-    for(let i=0;i<1000;i++){
-        let type=Math.floor(Math.random()*3);
-
-        if(type===0){
-            let a=Math.floor(Math.random()*20);
-            let b=Math.floor(Math.random()*20);
-            gameQuestions.push({q:`${a}+${b}`,a:(a+b)});
-        }
-
-        if(type===1){
-            let a=Math.floor(Math.random()*15);
-            let b=Math.floor(Math.random()*15);
-            gameQuestions.push({q:`${a}x${b}`,a:(a*b)});
-        }
-
-        if(type===2){
-            let a=Math.floor(Math.random()*50);
-            let b=Math.floor(Math.random()*50);
-            gameQuestions.push({q:`${a}-${b}`,a:(a-b)});
-        }
-    }
+gameQuestions=[];
+for(let i=0;i<1000;i++){
+let a=Math.floor(Math.random()*20);
+let b=Math.floor(Math.random()*20);
+gameQuestions.push({q:`${a}+${b}`,a:(a+b),tip:"Legg sammen"});
 }
-
+}
 generateGame();
 
+function startGame(){streak=0;nextQuestion()}
+
 function nextQuestion(){
-    let q=gameQuestions[Math.floor(Math.random()*gameQuestions.length)];
-    speedStart=Date.now();
+let q=gameQuestions[Math.floor(Math.random()*gameQuestions.length)];
+speedStart=Date.now();
 
-    gameBox.innerHTML=`
-    <p>${q.q} = ?</p>
-    <input id='gi'>
-    <button onclick="checkGame(${q.a})">Svar</button>
-    <p>Streak: ${streak}/10</p>
-    `;
+gameBox.innerHTML=`
+<p>${q.q} = ?</p>
+<p>💡 ${q.tip}</p>
+<input id='gi'>
+<button onclick="checkGame(${q.a},'${q.tip}')">Svar</button>
+<p>Streak: ${streak}/10</p>
+`;
 }
 
-function checkGame(c){
-    let v=document.getElementById("gi").value;
-
-    if(v==c){
-        streak++;
-        if(streak>=10){
-            gameBox.innerHTML="🔥 DU VANT! 10 riktige på rad!";
-            return;
-        }
-        nextQuestion();
-    }else{
-        streak=0;
-        gameBox.innerHTML="Feil! Starter på nytt";
-    }
+function checkGame(c,tip){
+let v=document.getElementById("gi").value;
+if(v==c){
+streak++;
+if(streak>=10){gameBox.innerHTML="🔥 DU VANT!";return}
+nextQuestion();
+}else{
+streak=0;
+gameBox.innerHTML="Feil ❌ Tips: "+tip;
+}
 }
 
-input.addEventListener("keypress",e=>{if(e.key==='Enter')send()});("keypress",e=>{if(e.key==='Enter')send()});
+input.addEventListener("keypress",e=>{if(e.key==='Enter')send()});
 
 </script>
 
