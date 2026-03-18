@@ -3,180 +3,170 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lærehjelp AI</title>
-
+<title>Lærehjelp AI - Avansert</title>
 <style>
-:root{--bg:#0f172a;--card:#1e293b;--accent:#4a90e2}
-body{margin:0;font-family:Segoe UI;background:var(--bg);color:white}
-.hidden{display:none}
-section{padding:20px;max-width:1300px;margin:auto;height:100vh;display:flex;flex-direction:column}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px}
-.card{background:var(--card);padding:25px;border-radius:20px;text-align:center;cursor:pointer}
-.card:hover{transform:scale(1.05)}
-
-#messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:10px}
-.msg{padding:14px;border-radius:14px;max-width:75%}
-.user{background:#3b82f6;margin-left:auto}
-.ai{background:#475569}
-
-input{flex:1;padding:12px;border-radius:12px;border:none}
-button{padding:10px;border:none;border-radius:10px;background:var(--accent);color:white}
-
-.big{background:var(--card);padding:25px;border-radius:20px;margin-top:20px}
-.backBtn{position:fixed;bottom:15px;left:15px;background:#334155}
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --accent: #4a90e2;
+  --green: #22c55e;
+  --red: #ef4444;
+}
+body {margin:0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color:white;}
+.hidden {display:none;}
+section {padding:20px; max-width:1300px; margin:auto; min-height:100vh; display:flex; flex-direction:column;}
+.grid {display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px;}
+.card {background: var(--card); padding:25px; border-radius:20px; text-align:center; cursor:pointer; transition: 0.2s;}
+.card:hover {transform: scale(1.05);}
+#messages {flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:10px;}
+.msg {padding:14px; border-radius:14px; max-width:75%;}
+.user {background:#3b82f6; margin-left:auto;}
+.ai {background:#475569;}
+input {flex:1; padding:12px; border-radius:12px; border:none;}
+button {padding:10px; border:none; border-radius:10px; background:var(--accent); color:white; cursor:pointer;}
+.big {background:var(--card); padding:25px; border-radius:20px; margin-top:20px;}
+.backBtn {position:fixed; bottom:15px; left:15px; background:#334155; padding:10px; border-radius:10px; cursor:pointer;}
 </style>
 </head>
-
 <body>
 
 <section id="start">
-<h1>📚 Lærehjelp AI</h1>
+<h1>📚 Lærehjelp AI - Avansert</h1>
 <div class="grid" id="grades"></div>
 </section>
 
 <section id="menu" class="hidden">
 <h2 id="title"></h2>
 <div class="grid">
-<div class="card" onclick="goChat()">💬 AI Chat</div>
-<div class="card" onclick="goQuiz()">📚 Quiz</div>
-<div class="card" onclick="goGame()">🎮 Speed Game</div>
+  <div class="card" onclick="goChat()">💬 AI Chat</div>
+  <div class="card" onclick="goQuiz()">📚 Quiz</div>
+  <div class="card" onclick="goGame()">🎮 Speed Game</div>
 </div>
 </section>
 
 <section id="chat" class="hidden">
 <h2>AI Lærer</h2>
 <div id="messages"></div>
-<div style="display:flex;gap:10px">
-<input id="input" placeholder="Spør om hva som helst...">
-<button onclick="send()">Send</button>
+<div style="display:flex; gap:10px;">
+  <input id="input" placeholder="Spør om hva som helst...">
+  <button onclick="send()">Send</button>
 </div>
-<button class="backBtn" onclick="back()">←</button>
+<button class="backBtn" onclick="back()">← Tilbake</button>
 </section>
 
 <section id="quiz" class="hidden">
 <h2>Quiz</h2>
 <div class="big" id="quizBox"></div>
 <button onclick="startQuiz()">Neste</button>
-<button class="backBtn" onclick="back()">←</button>
+<button class="backBtn" onclick="back()">← Tilbake</button>
 </section>
 
 <section id="game" class="hidden">
 <h2>🔥 Speed Game</h2>
 <div class="big" id="gameBox"></div>
 <button onclick="startGame()">Start</button>
-<button class="backBtn" onclick="back()">←</button>
+<button class="backBtn" onclick="back()">← Tilbake</button>
 </section>
 
 <script>
 let grade=4;
 let streak=0;
+let messagesDiv = document.getElementById('messages');
 
-// TRINN
+// Trinnknapper 4-10
 for(let i=4;i<=10;i++){
-let b=document.createElement("div");
-b.className="card";
-b.innerText=i+". trinn";
-b.onclick=()=>{grade=i;title.innerText="Trinn "+i;show("menu")};
-grades.appendChild(b);
+  let b=document.createElement('div');
+  b.className='card';
+  b.innerText=i+'. trinn';
+  b.onclick=()=>{grade=i; title.innerText='Trinn '+i; show('menu');};
+  grades.appendChild(b);
 }
 
-function show(id){document.querySelectorAll("section").forEach(s=>s.classList.add("hidden"));document.getElementById(id).classList.remove("hidden")}
-function back(){show("menu")}
-function goChat(){show("chat")}
-function goQuiz(){show("quiz");startQuiz()}
-function goGame(){show("game")}
+function show(id){document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');}
+function back(){show('menu');}
+function goChat(){show('chat'); messagesDiv.innerHTML='';}
+function goQuiz(){show('quiz'); startQuiz();}
+function goGame(){show('game');}
 
-// MENNESKELIG AI
-function humanAI(text){
-text=text.toLowerCase();
+// CHATGPT-LIGNENDE AI
+function chatGPTlike(input){
+  input = input.toLowerCase();
+  let intro='';
+  if(input.includes('hva') || input.includes('forklar')) intro='Godt spørsmål! La oss se på det sammen.';
+  else if(input.includes('hvordan')) intro='Bra at du spør – jeg forklarer steg for steg.';
+  else intro='Jeg skjønner hva du mener. La meg forklare.';
 
-let responses=[
-"Bra spørsmål! La oss se på det sammen.",
-"Hmm, dette er interessant 👀",
-"Ok, jeg skal forklare det på en enkel måte.",
-"Dette er faktisk ganske viktig å forstå!",
-"La oss bryte det ned steg for steg."
-];
+  let explanation='';
+  if(grade<=5) explanation=`${input} kan forstås enkelt. Bryt det ned i små deler og forstå steg for steg.`;
+  else if(grade<=7) explanation=`${input} er et tema hvor sammenheng er viktig. Når du forstår sammenhengen, blir det enklere.`;
+  else explanation=`${input} er et avansert tema. Se på hvordan ting henger sammen og brukes i praksis.`;
 
-let intro=responses[Math.floor(Math.random()*responses.length)];
+  let example='';
+  if(input.includes('+')) example='Eksempel: 2 + 3 = 5, legg sammen tallene.';
+  else if(input.includes('x') || input.includes('*')) example='Eksempel: 3 × 4 betyr 3 lagt sammen 4 ganger.';
+  else if(input.includes('-')) example='Eksempel: 10 − 4 = 6, trekk fra.';
+  else example='Et eksempel kan hjelpe deg å forstå.';
 
-let explanation="";
-
-if(grade<=5){
-explanation="Tenk på det sånn: " + text + " er noe du kan forstå ved å bruke enkle eksempler.";
-}else if(grade<=7){
-explanation="" + text + " handler om et viktig tema. Hvis vi bryter det ned, blir det mye lettere å forstå.";
-}else{
-explanation="" + text + " er et faglig tema. Det handler ofte om sammenhenger og hvordan ting fungerer i praksis.";
-}
-
-let tip="";
-if(text.includes("+")) tip="Når du legger sammen, kan du starte med små tall først.";
-if(text.includes("x")||text.includes("*")) tip="Ganging er egentlig bare det samme tallet flere ganger.";
-if(text.includes("-")) tip="Når du trekker fra, kan du tenke hva som er igjen.";
-
-return `${intro}\n\n${explanation}\n\n${tip}`;
+  let tip='Ta det steg for steg og ikke prøv å forstå alt på en gang.';
+  return `${intro}\n\n${explanation}\n\n${example}\n\n${tip}`;
 }
 
 function send(){
-let text=input.value;
-if(!text)return;
-add(text,"user");
-input.value="";
-
-setTimeout(()=>{
-let response=humanAI(text);
-add(response,"ai");
-},500);
+  let text=document.getElementById('input').value;
+  if(!text) return;
+  add(text,'user');
+  document.getElementById('input').value='';
+  setTimeout(()=>{
+    add(chatGPTlike(text),'ai');
+  },500);
 }
 
-function add(t,type){
-let d=document.createElement("div");
-d.className="msg "+type;
-d.innerText=t;
-messages.appendChild(d);
-messages.scrollTop=9999;
+function add(text,type){
+  let d=document.createElement('div');
+  d.className='msg '+type;
+  d.innerText=text;
+  messagesDiv.appendChild(d);
+  messagesDiv.scrollTop=9999;
 }
 
-// QUIZ (1000)
+// QUIZ (1000 spørsmål)
 let quiz=[];
 for(let i=0;i<1000;i++){
-let a=Math.floor(Math.random()*50);
-let b=Math.floor(Math.random()*50);
-quiz.push({q:`Hva er ${a}+${b}?`,a:(a+b),tip:"Legg sammen tallene"});
+  let a=Math.floor(Math.random()*50);
+  let b=Math.floor(Math.random()*50);
+  quiz.push({q:`Hva er ${a}+${b}?`, a:(a+b), tip:'Legg sammen tallene'});
 }
 
 function startQuiz(){
-let q=quiz[Math.floor(Math.random()*quiz.length)];
-quizBox.innerHTML=`<p>${q.q}</p><p>💡 ${q.tip}</p><input id='qi'><button onclick="checkQuiz(${q.a})">Svar</button>`;
+  let q=quiz[Math.floor(Math.random()*quiz.length)];
+  quizBox.innerHTML=`<p>${q.q}</p><p>💡 ${q.tip}</p><input id='qi'><button onclick="checkQuiz(${q.a})">Svar</button>`;
 }
 
 function checkQuiz(a){
-let v=document.getElementById("qi").value;
-quizBox.innerHTML=(v==a)?"Riktig!":"Feil, prøv igjen";
+  let v=document.getElementById('qi').value;
+  quizBox.innerHTML=(v==a)?'Riktig!':'Feil, prøv igjen';
 }
 
-// GAME
+// SPEED GAME
 let game=[];
 for(let i=0;i<1000;i++){
-let a=Math.floor(Math.random()*20);
-let b=Math.floor(Math.random()*20);
-game.push({q:`${a}+${b}`,a:(a+b)});
+  let a=Math.floor(Math.random()*20);
+  let b=Math.floor(Math.random()*20);
+  game.push({q:`${a}+${b}`, a:(a+b)});
 }
 
-function startGame(){streak=0;nextQ()}
-
+function startGame(){streak=0; nextQ();}
 function nextQ(){
-let q=game[Math.floor(Math.random()*game.length)];
-gameBox.innerHTML=`<p>${q.q}</p><input id='gi'><button onclick="checkGame(${q.a})">Svar</button><p>${streak}/10</p>`;
+  let q=game[Math.floor(Math.random()*game.length)];
+  gameBox.innerHTML=`<p>${q.q}</p><input id='gi'><button onclick="checkGame(${q.a})">Svar</button><p>Streak: ${streak}/10</p>`;
 }
-
 function checkGame(a){
-let v=document.getElementById("gi").value;
-if(v==a){streak++;if(streak>=10){gameBox.innerHTML="🔥 Du vant!";return;}nextQ()}else{streak=0;gameBox.innerHTML="Feil! Start på nytt"}
+  let v=document.getElementById('gi').value;
+  if(v==a){streak++; if(streak>=10){gameBox.innerHTML='🔥 Du vant!'; return;} nextQ();}
+  else{streak=0; gameBox.innerHTML='Feil! Start på nytt';}
 }
 
-input.addEventListener("keypress",e=>{if(e.key==='Enter')send()});
+document.getElementById('input').addEventListener('keypress',e=>{if(e.key==='Enter') send();});
 </script>
 
 </body>
