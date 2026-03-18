@@ -2,149 +2,205 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Smart Skoleassistent</title>
+<title>AI Læringsplattform EXTREME</title>
+
 <style>
-body {
-  font-family: Arial;
-  margin: 0;
-  background: linear-gradient(135deg, #6fb1fc, #4364f7);
-  color: white;
-}
-header {
-  text-align: center;
-  padding: 20px;
-  font-size: 24px;
-}
-.container {
-  padding: 20px;
-}
-.card {
-  background: white;
-  color: black;
-  padding: 20px;
-  border-radius: 15px;
-  margin: 10px 0;
-}
-button {
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-  background: #4364f7;
-  color: white;
-  cursor: pointer;
-}
-button:hover {
-  background: #2f4ed8;
-}
-.view { display: none; }
-.active { display: block; }
+body { font-family: Arial; margin:0; background:#0f172a; color:white; }
+.container { max-width:1000px; margin:auto; padding:20px; }
+
+#messages { height:400px; overflow-y:auto; background:#1e293b; padding:10px; border-radius:10px; }
+.msg { padding:10px; margin:5px; border-radius:10px; max-width:70%; }
+.user { background:#3b82f6; margin-left:auto; }
+.ai { background:#334155; }
+
+input { padding:10px; width:70%; border-radius:10px; border:none; }
+button { padding:10px; margin:5px; border:none; border-radius:10px; cursor:pointer; }
+
+.quiz, .game { background:#1e293b; padding:10px; margin-top:10px; border-radius:10px; }
+
 </style>
 </head>
 
 <body>
-
-<header>🎓 Smart Skoleassistent</header>
-
 <div class="container">
 
-<!-- Velg trinn -->
-<div id="view1" class="view active">
-  <div class="card">
-    <h2>Velg trinn</h2>
-    <select id="grade">
-      <option value="1">1. trinn</option>
-      <option value="5">5. trinn</option>
-      <option value="10">10. trinn</option>
-    </select>
-    <button onclick="goMenu()">Start</button>
-  </div>
+<h1>🤖 AI Lærer EXTREME</h1>
+
+<div>
+Level: <span id="level">1</span> | XP: <span id="xp">0</span>
 </div>
 
-<!-- Meny -->
-<div id="view2" class="view">
-  <div class="card">
-    <h2>Velg funksjon</h2>
-    <button onclick="show('ai')">🤖 AI-hjelp</button>
-    <button onclick="show('quiz')">❓ Quiz</button>
-    <button onclick="show('vocab')">📚 Gloser</button>
-  </div>
+<div id="messages"></div>
+
+<input id="input" placeholder="Spør om hva som helst...">
+<button onclick="send()">Send</button>
+
+<hr>
+
+<h2>📚 Quiz</h2>
+<div class="quiz">
+<button onclick="startQuiz()">Start quiz</button>
+<div id="quizBox"></div>
 </div>
 
-<!-- AI -->
-<div id="ai" class="view">
-  <div class="card">
-    <h2>AI-hjelp</h2>
-    <textarea id="q" placeholder="Spør noe..."></textarea>
-    <button onclick="askAI()">Få svar</button>
-    <p id="a"></p>
-    <button onclick="back()">← Tilbake</button>
-  </div>
-</div>
-
-<!-- Quiz -->
-<div id="quiz" class="view">
-  <div class="card">
-    <h2>Quiz</h2>
-    <p>Hva er 2 + 2?</p>
-    <button onclick="alert('Riktig!')">4</button>
-    <button onclick="alert('Feil!')">5</button>
-    <button onclick="back()">← Tilbake</button>
-  </div>
-</div>
-
-<!-- Gloser -->
-<div id="vocab" class="view">
-  <div class="card">
-    <h2>Gloseprøve</h2>
-    <p>Hva er "hund" på engelsk?</p>
-    <input id="v">
-    <button onclick="check()">Sjekk</button>
-    <p id="res"></p>
-    <button onclick="back()">← Tilbake</button>
-  </div>
+<h2>🎮 Spill</h2>
+<div class="game">
+<button onclick="startGame()">Start spill</button>
+<div id="gameBox"></div>
 </div>
 
 </div>
 
 <script>
-let grade;
 
-function goMenu() {
-  grade = document.getElementById("grade").value;
-  show("view2");
+// ===== STATE =====
+let xp=0, level=1;
+let locked=false;
+let answer="";
+let explanation="";
+
+// ===== KNOWLEDGE BASE =====
+const knowledge = [
+{
+keywords:["pi","sirkel"],
+text:"Pi er et tall som brukes i sirkler. Det er ca 3.14.",
+deep:"Pi er forholdet mellom omkrets og diameter i en sirkel.",
+q:"Hva er første tallet i pi?",
+a:"3"
+},
+{
+keywords:["foto","plante"],
+text:"Fotosyntese er hvordan planter lager energi.",
+deep:"Planter bruker sollys, vann og CO2 for å lage glukose og oksygen.",
+q:"Hva lager planter som vi puster?",
+a:"oksygen"
+},
+{
+keywords:["engelsk","language"],
+text:"Engelsk er et globalt språk.",
+deep:"Engelsk brukes i internasjonal kommunikasjon og teknologi.",
+q:"Hva betyr 'hello' på norsk?",
+a:"hei"
+}
+];
+
+// ===== CHAT =====
+function send(){
+let text=input.value.toLowerCase();
+if(!text) return;
+
+add(text,"user");
+input.value="";
+
+setTimeout(()=>{
+
+// LOCK SYSTEM
+if(locked){
+if(text.includes(answer)){
+add("Riktig! 🎉","ai");
+gainXP(20);
+locked=false;
+}else{
+add("Feil ❌ La meg forklare bedre:\n"+explanation,"ai");
+add("Nytt spørsmål: "+answerQuestion(),"ai");
+}
+return;
 }
 
-function show(id) {
-  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+// FIND TOPIC
+let found = knowledge.find(k => 
+k.keywords.some(word => text.includes(word))
+);
+
+if(found){
+add(found.text,"ai");
+explanation=found.deep;
+answer=found.a;
+setTimeout(()=>{
+add("Kontrollspørsmål: "+found.q,"ai");
+locked=true;
+},800);
+}else{
+add("Jeg kan forklare nesten alt 😄 men prøv et skoletema!", "ai");
 }
 
-function back() {
-  show("view2");
+},500);
 }
 
-// AI-kall til backend
-async function askAI() {
-  const question = document.getElementById("q").value;
-  document.getElementById("a").innerText = "Laster...";
-
-  const res = await fetch("http://localhost:3000/api/ai", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, grade })
-  });
-
-  const data = await res.json();
-  document.getElementById("a").innerText = data.answer;
+// ===== XP SYSTEM =====
+function gainXP(x){
+xp+=x;
+if(xp>=level*50){
+xp=0;
+level++;
+add("LEVEL UP 🚀","ai");
+}
+updateUI();
 }
 
-// Glose
-function check() {
-  const val = document.getElementById("v").value.toLowerCase();
-  document.getElementById("res").innerText =
-    val === "dog" ? "Riktig!" : "Feil!";
+function updateUI(){
+document.getElementById("xp").innerText=xp;
+document.getElementById("level").innerText=level;
 }
+
+// ===== QUIZ =====
+let quizQ = [
+{q:"2+2?", a:"4"},
+{q:"Hva er hovedstaden i Norge?", a:"oslo"},
+{q:"Hva betyr cat?", a:"katt"}
+];
+
+function startQuiz(){
+let q = quizQ[Math.floor(Math.random()*quizQ.length)];
+quizBox.innerHTML = `
+<p>${q.q}</p>
+<input id="quizInput">
+<button onclick="checkQuiz('${q.a}')">Svar</button>
+`;
+}
+
+function checkQuiz(a){
+let val = document.getElementById("quizInput").value.toLowerCase();
+if(val.includes(a)){
+quizBox.innerHTML="Riktig! 🎉";
+gainXP(15);
+}else{
+quizBox.innerHTML="Feil! Prøv igjen.";
+}
+}
+
+// ===== GAME =====
+function startGame(){
+gameBox.innerHTML = `
+<p>Trykk riktig svar!</p>
+<button onclick="gameAnswer(true)">Riktig</button>
+<button onclick="gameAnswer(false)">Feil</button>
+`;
+}
+
+function gameAnswer(correct){
+if(correct){
+gameBox.innerHTML="Bra! 🎮";
+gainXP(10);
+}else{
+gameBox.innerHTML="Oops! Prøv igjen";
+}
+}
+
+// ===== UI =====
+function add(text,type){
+let d=document.createElement("div");
+d.className="msg "+type;
+d.innerText=text;
+messages.appendChild(d);
+messages.scrollTop=9999;
+}
+
+// ENTER KEY
+input.addEventListener("keypress", e=>{
+if(e.key==="Enter") send();
+});
+
 </script>
-
 </body>
 </html>
