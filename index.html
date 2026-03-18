@@ -2,87 +2,111 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>AI Læringsplattform EXTREME</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lærehjelp</title>
 
 <style>
-body { font-family: Arial; margin:0; background:#0f172a; color:white; }
-.container { max-width:1000px; margin:auto; padding:20px; }
+:root{
+  --bg:#0f172a;
+  --card:#111827;
+  --accent:#4a90e2;
+  --user:#2563eb;
+  --ai:#374151;
+}
 
-#messages { height:400px; overflow-y:auto; background:#1e293b; padding:10px; border-radius:10px; }
-.msg { padding:10px; margin:5px; border-radius:10px; max-width:70%; }
-.user { background:#3b82f6; margin-left:auto; }
-.ai { background:#334155; }
+body{margin:0;font-family:Segoe UI,Arial;background:var(--bg);color:white;}
+.hidden{display:none}
 
-input { padding:10px; width:70%; border-radius:10px; border:none; }
-button { padding:10px; margin:5px; border:none; border-radius:10px; cursor:pointer; }
+.container{max-width:1000px;margin:auto;padding:20px}
+.card{background:var(--card);padding:20px;border-radius:15px;box-shadow:0 10px 25px rgba(0,0,0,0.3)}
 
-.quiz, .game { background:#1e293b; padding:10px; margin-top:10px; border-radius:10px; }
+h1{text-align:center}
 
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px}
+button{padding:12px;border:none;border-radius:10px;background:var(--accent);color:white;cursor:pointer}
+button:hover{opacity:.9}
+
+#messages{height:350px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.msg{padding:10px;border-radius:10px;max-width:75%}
+.user{background:var(--user);margin-left:auto}
+.ai{background:var(--ai)}
+
+input{padding:10px;border-radius:10px;border:none;width:70%}
+
+.top{display:flex;justify-content:space-between;margin-bottom:10px}
+.badge{background:gold;color:black;padding:5px 10px;border-radius:10px}
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<h1>🤖 AI Lærer EXTREME</h1>
+<h1>📚 Lærehjelp</h1>
 
-<div>
-Level: <span id="level">1</span> | XP: <span id="xp">0</span>
+<!-- TRINN VALG -->
+<div id="gradeSelect" class="card">
+<h2>Velg trinn</h2>
+<div class="grid" id="grades"></div>
 </div>
 
-<div id="messages"></div>
+<!-- APP -->
+<div id="app" class="hidden">
 
+<div class="top">
+<div>Trinn: <span id="grade"></span></div>
+<div>Level: <span id="level">1</span></div>
+<div class="badge">XP: <span id="xp">0</span></div>
+</div>
+
+<div class="card">
+<h3>💬 AI Lærer</h3>
+<div id="messages"></div>
 <input id="input" placeholder="Spør om hva som helst...">
 <button onclick="send()">Send</button>
+</div>
 
-<hr>
-
-<h2>📚 Quiz</h2>
-<div class="quiz">
+<div class="card" style="margin-top:20px">
+<h3>📚 Quiz</h3>
 <button onclick="startQuiz()">Start quiz</button>
 <div id="quizBox"></div>
 </div>
 
-<h2>🎮 Spill</h2>
-<div class="game">
-<button onclick="startGame()">Start spill</button>
-<div id="gameBox"></div>
 </div>
 
 </div>
 
 <script>
-
 // ===== STATE =====
 let xp=0, level=1;
 let locked=false;
 let answer="";
 let explanation="";
+let userGrade=1;
 
-// ===== KNOWLEDGE BASE =====
-const knowledge = [
-{
-keywords:["pi","sirkel"],
-text:"Pi er et tall som brukes i sirkler. Det er ca 3.14.",
-deep:"Pi er forholdet mellom omkrets og diameter i en sirkel.",
-q:"Hva er første tallet i pi?",
-a:"3"
-},
-{
-keywords:["foto","plante"],
-text:"Fotosyntese er hvordan planter lager energi.",
-deep:"Planter bruker sollys, vann og CO2 for å lage glukose og oksygen.",
-q:"Hva lager planter som vi puster?",
-a:"oksygen"
-},
-{
-keywords:["engelsk","language"],
-text:"Engelsk er et globalt språk.",
-deep:"Engelsk brukes i internasjonal kommunikasjon og teknologi.",
-q:"Hva betyr 'hello' på norsk?",
-a:"hei"
+// ===== TRINN SYSTEM =====
+for(let i=1;i<=10;i++){
+  let b=document.createElement("button");
+  b.innerText=i+". trinn";
+  b.onclick=()=>{
+    userGrade=i;
+    grade.innerText=i;
+    gradeSelect.classList.add("hidden");
+    app.classList.remove("hidden");
+    add("Hei! Jeg er din AI-lærer. Jeg forklarer ting på nivået til trinn "+i+" 😊","ai");
+  };
+  grades.appendChild(b);
 }
-];
+
+// ===== SMART AI =====
+function smartExplain(topic){
+  if(userGrade<=4){
+    return "La oss ta det enkelt: " + topic + ". Kan du tenke litt selv først? 😊";
+  }else if(userGrade<=7){
+    return "La oss forklare steg for steg: " + topic + ". Hva tror du svaret kan være?";
+  }else{
+    return "Her er en forklaring: " + topic + ". Hvordan ville du løst det selv?";
+  }
+}
 
 // ===== CHAT =====
 function send(){
@@ -94,113 +118,78 @@ input.value="";
 
 setTimeout(()=>{
 
-// LOCK SYSTEM
 if(locked){
 if(text.includes(answer)){
 add("Riktig! 🎉","ai");
 gainXP(20);
 locked=false;
 }else{
-add("Feil ❌ La meg forklare bedre:\n"+explanation,"ai");
-add("Nytt spørsmål: "+answerQuestion(),"ai");
+add("Ikke helt riktig. La oss gå dypere 👇","ai");
+add(explanation,"ai");
+add("Prøv igjen: "+answerQuestion(),"ai");
 }
 return;
 }
 
-// FIND TOPIC
-let found = knowledge.find(k => 
-k.keywords.some(word => text.includes(word))
-);
+let topic = "Dette handler om " + text;
+let explain = smartExplain(topic);
 
-if(found){
-add(found.text,"ai");
-explanation=found.deep;
-answer=found.a;
+add(explain,"ai");
+
+explanation = "Tenk på dette: " + text + " betyr noe du må forstå steg for steg.";
+answer = text.split(" ")[0];
+
 setTimeout(()=>{
-add("Kontrollspørsmål: "+found.q,"ai");
+add("Kontrollspørsmål: Hva er hovedideen i '"+text+"'?","ai");
 locked=true;
 },800);
-}else{
-add("Jeg kan forklare nesten alt 😄 men prøv et skoletema!", "ai");
-}
 
 },500);
 }
 
-// ===== XP SYSTEM =====
+// ===== XP =====
 function gainXP(x){
 xp+=x;
 if(xp>=level*50){
-xp=0;
-level++;
-add("LEVEL UP 🚀","ai");
-}
+xp=0;level++;add("LEVEL UP 🚀","ai");}
 updateUI();
 }
-
-function updateUI(){
-document.getElementById("xp").innerText=xp;
-document.getElementById("level").innerText=level;
-}
+function updateUI(){xpEl.innerText=xp;levelEl.innerText=level;}
 
 // ===== QUIZ =====
-let quizQ = [
-{q:"2+2?", a:"4"},
-{q:"Hva er hovedstaden i Norge?", a:"oslo"},
-{q:"Hva betyr cat?", a:"katt"}
-];
+const quizData={
+1:[{q:"2+2?",a:"4"}],
+5:[{q:"Hva er 10*10?",a:"100"}],
+10:[{q:"Hva er derivert av x^2?",a:"2x"}]
+};
 
 function startQuiz(){
-let q = quizQ[Math.floor(Math.random()*quizQ.length)];
-quizBox.innerHTML = `
-<p>${q.q}</p>
-<input id="quizInput">
-<button onclick="checkQuiz('${q.a}')">Svar</button>
-`;
+let set = quizData[userGrade] || quizData[1];
+let q=set[Math.floor(Math.random()*set.length)];
+quizBox.innerHTML=`<p>${q.q}</p><input id='quizInput'><button onclick="checkQuiz('${q.a}')">Svar</button>`;
 }
 
 function checkQuiz(a){
-let val = document.getElementById("quizInput").value.toLowerCase();
-if(val.includes(a)){
+let v=document.getElementById("quizInput").value.toLowerCase();
+if(v.includes(a)){
 quizBox.innerHTML="Riktig! 🎉";
 gainXP(15);
 }else{
-quizBox.innerHTML="Feil! Prøv igjen.";
-}
-}
-
-// ===== GAME =====
-function startGame(){
-gameBox.innerHTML = `
-<p>Trykk riktig svar!</p>
-<button onclick="gameAnswer(true)">Riktig</button>
-<button onclick="gameAnswer(false)">Feil</button>
-`;
-}
-
-function gameAnswer(correct){
-if(correct){
-gameBox.innerHTML="Bra! 🎮";
-gainXP(10);
-}else{
-gameBox.innerHTML="Oops! Prøv igjen";
+quizBox.innerHTML="Feil, prøv igjen";
 }
 }
 
 // ===== UI =====
-function add(text,type){
+function add(t,type){
 let d=document.createElement("div");
 d.className="msg "+type;
-d.innerText=text;
+d.innerText=t;
 messages.appendChild(d);
 messages.scrollTop=9999;
 }
 
-// ENTER KEY
-input.addEventListener("keypress", e=>{
-if(e.key==="Enter") send();
-});
-
+input.addEventListener("keypress",e=>{if(e.key==="Enter")send();});
 </script>
+
 </body>
 </html>
