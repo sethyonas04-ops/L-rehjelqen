@@ -3,29 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lærehjelp AI - Ekte ChatGPT</title>
+<title>Lærehjelp AI - Lokal</title>
 <style>
 :root { --bg: #0f172a; --card: #1e293b; --accent: #4a90e2; --green: #22c55e; --red: #ef4444; }
-body { margin:0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color:white; }
-.hidden { display:none; }
-section { padding:20px; max-width:1300px; margin:auto; min-height:100vh; display:flex; flex-direction:column; }
-.grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:15px; }
-.card { background: var(--card); padding:25px; border-radius:20px; text-align:center; cursor:pointer; transition:0.2s; }
-.card:hover { transform:scale(1.05); }
-#messages { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:10px; }
-.msg { padding:14px; border-radius:14px; max-width:75%; }
-.user { background:#3b82f6; margin-left:auto; }
-.ai { background:#475569; }
-input { flex:1; padding:12px; border-radius:12px; border:none; }
-button { padding:10px; border:none; border-radius:10px; background:var(--accent); color:white; cursor:pointer; }
-.backBtn { position:fixed; bottom:15px; left:15px; background:#334155; padding:10px; border-radius:10px; cursor:pointer; }
-.big { background:var(--card); padding:25px; border-radius:20px; margin-top:20px; }
+body {margin:0; font-family:'Segoe UI', sans-serif; background:var(--bg); color:white;}
+.hidden {display:none;}
+section {padding:20px; max-width:1300px; margin:auto; min-height:100vh; display:flex; flex-direction:column;}
+.grid {display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:15px;}
+.card {background: var(--card); padding:25px; border-radius:20px; text-align:center; cursor:pointer; transition:0.2s;}
+.card:hover {transform:scale(1.05);}
+#messages {flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:10px;}
+.msg {padding:14px; border-radius:14px; max-width:75%;}
+.user {background:#3b82f6; margin-left:auto;}
+.ai {background:#475569;}
+input {flex:1; padding:12px; border-radius:12px; border:none;}
+button {padding:10px; border:none; border-radius:10px; background:var(--accent); color:white; cursor:pointer;}
+.backBtn {position:fixed; bottom:15px; left:15px; background:#334155; padding:10px; border-radius:10px; cursor:pointer;}
+.big {background:var(--card); padding:25px; border-radius:20px; margin-top:20px;}
 </style>
 </head>
 <body>
 
 <section id="start">
-<h1>📚 Lærehjelp AI - Ekte ChatGPT</h1>
+<h1>📚 Lærehjelp AI - Lokal</h1>
 <div class="grid" id="grades"></div>
 </section>
 
@@ -63,8 +63,11 @@ button { padding:10px; border:none; border-radius:10px; background:var(--accent)
 </section>
 
 <script>
-// Trinnvalg
 let grade=4;
+let streak=0;
+let messagesDiv = document.getElementById('messages');
+
+// Trinnvalg 4-10
 for(let i=4;i<=10;i++){
   let b=document.createElement('div');
   b.className='card';
@@ -72,40 +75,41 @@ for(let i=4;i<=10;i++){
   b.onclick=()=>{grade=i; title.innerText='Trinn '+i; show('menu');};
   grades.appendChild(b);
 }
+
 function show(id){document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');}
 function back(){show('menu');}
 function goChat(){show('chat'); messagesDiv.innerHTML='';}
 function goQuiz(){show('quiz'); startQuiz();}
 function goGame(){show('game');}
 
-// ChatGPT API-funksjon
-async function chatGPT(query){
-  add(query,'user');
-  let messagesDiv = document.getElementById('messages');
-  try{
-    let response = await fetch('https://api.openai.com/v1/chat/completions',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer YOUR_OPENAI_API_KEY'
-      },
-      body: JSON.stringify({
-        model:'gpt-3.5-turbo',
-        messages:[{role:'user', content:query}]
-      })
-    });
-    let data=await response.json();
-    add(data.choices[0].message.content,'ai');
-  } catch(e){
-    add('Noe gikk galt med AI-serveren.','ai');
+// Simulert AI som hjelper uten å gi direkte svar
+function chatAI(input){
+  add(input,'user');
+  input = input.toLowerCase();
+  let response='';
+  // Hilsener
+  if(['hei','hallo','heisann'].includes(input.trim())){
+    response='Hei! Hvordan går det? Hva vil du lære i dag?';
   }
+  // Matte eksempel
+  else if(input.includes('+') || input.includes('-') || input.includes('×') || input.includes('*')){
+    response='Ok! La oss løse dette steg for steg. Prøv å identifisere tallene og operatoren først, så prøver du å regne ut hvert steg.';
+  }
+  // Tekst/faglig spørsmål
+  else if(input.includes('viking') || input.includes('historie')){
+    response='Dette handler om vikingene. Tenk på hvem de var, hvor de bodde og hva de gjorde. Hva tror du var viktig for dem?';
+  }
+  else{
+    response='Godt spørsmål! Jeg prøver å forklare. Tenk over hva du allerede vet, og prøv å koble det til dette temaet. Kan du gi et eksempel?';
+  }
+  setTimeout(()=>{add(response,'ai');},500);
 }
 
 function send(){
   let text=document.getElementById('input').value;
   if(!text) return;
   document.getElementById('input').value='';
-  chatGPT(text);
+  chatAI(text);
 }
 
 function add(text,type){
@@ -116,39 +120,39 @@ function add(text,type){
   messagesDiv.scrollTop=9999;
 }
 
-// QUIZ (1000 spørsmål)
+// Quiz med hint, ikke direkte svar
 let quiz=[];
 for(let i=0;i<1000;i++){
   let a=Math.floor(Math.random()*50);
   let b=Math.floor(Math.random()*50);
-  quiz.push({q:`Hva er ${a}+${b}?`, a:(a+b), tip:'Legg sammen tallene'});
+  quiz.push({q:`Hva er ${a}+${b}?`, a:(a+b), tip:'Prøv å legg sammen tallene steg for steg'});
 }
+
 function startQuiz(){
   let q=quiz[Math.floor(Math.random()*quiz.length)];
-  quizBox.innerHTML=`<p>${q.q}</p><p>💡 ${q.tip}</p><input id='qi'><button onclick="checkQuiz(${q.a})">Svar</button>`;
+  quizBox.innerHTML=`<p>${q.q}</p><p>💡 Hint: ${q.tip}</p><input id='qi'><button onclick="checkQuiz(${q.a})">Svar</button>`;
 }
 function checkQuiz(a){
   let v=document.getElementById('qi').value;
-  quizBox.innerHTML=(v==a)?'Riktig!':'Feil, prøv igjen';
+  if(v==a){quizBox.innerHTML='Riktig! 🎉 Prøv neste.';}else{quizBox.innerHTML='Feil, prøv igjen med hintet!';}
 }
 
-// SPEED GAME
+// Speed Game med hint
 let game=[];
 for(let i=0;i<1000;i++){
   let a=Math.floor(Math.random()*20);
   let b=Math.floor(Math.random()*20);
   game.push({q:`${a}+${b}`, a:(a+b)});
 }
-let streak=0;
 function startGame(){streak=0; nextQ();}
 function nextQ(){
   let q=game[Math.floor(Math.random()*game.length)];
-  gameBox.innerHTML=`<p>${q.q}</p><input id='gi'><button onclick="checkGame(${q.a})">Svar</button><p>Streak: ${streak}/10</p>`;
+  gameBox.innerHTML=`<p>${q.q}</p><input id='gi'><button onclick="checkGame(${q.a})">Svar</button><p>Streak: ${streak}/10</p><p>💡 Hint: Bryt det opp steg for steg</p>`;
 }
 function checkGame(a){
   let v=document.getElementById('gi').value;
   if(v==a){streak++; if(streak>=10){gameBox.innerHTML='🔥 Du vant!'; return;} nextQ();}
-  else{streak=0; gameBox.innerHTML='Feil! Start på nytt';}
+  else{streak=0; gameBox.innerHTML='Feil! Prøv neste gang med hint!';}
 }
 
 document.getElementById('input').addEventListener('keypress',e=>{if(e.key==='Enter') send();});
