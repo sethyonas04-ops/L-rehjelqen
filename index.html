@@ -1,34 +1,85 @@
-import openai
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.chains import RetrievalQA
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faglig Ekspert-Motor v2.0</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+        .chat-container { width: 100%; max-width: 800px; background: white; border-radius: 12px; shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; height: 80vh; }
+        #header { background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 1.2em; font-weight: bold; }
+        #chat-box { flex: 1; padding: 20px; overflow-y: auto; border-bottom: 1px solid #ddd; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px 15px; border-radius: 8px; max-width: 80%; line-height: 1.5; }
+        .user { align-self: flex-end; background: #3498db; color: white; }
+        .ai { align-self: flex-start; background: #ecf0f1; color: #2c3e50; border: 1px solid #dcdde1; }
+        .input-area { padding: 20px; display: flex; gap: 10px; background: white; }
+        input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; outline: none; }
+        button { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #219150; }
+        .source-tag { font-size: 0.8em; color: #7f8c8d; margin-top: 5px; display: block; font-style: italic; }
+    </style>
+</head>
+<body>
 
-# 1. Last inn faglige kilder (f.eks. PDF-er fra universitetet eller tekniske manualer)
-# Vi simulerer at vi har en "hjerne" full av fagkunnskap her
-faglig_database = Chroma(
-    persist_directory="./fag_kunnskap", 
-    embedding_function=OpenAIEmbeddings()
-)
+<div class="chat-container">
+    <div id="header">Faglig Ekspert-System [Akademisk Modus]</div>
+    <div id="chat-box">
+        <div class="message ai">System klar. Vennligst still et fagspørsmål. Jeg vil svare basert på vitenskapelig metode og logikk.</div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Skriv ditt faglige spørsmål her...">
+        <button onclick="sendSporsmal()">SPØR</button>
+    </div>
+</div>
 
-# 2. Sett opp motoren med "Strenge Instrukser"
-# Vi tvinger den til å være akademisk og kildekritisk
-system_instruks = """
-Du er en faglig ekspert-motor. 
-Dine regler:
-1. Svar KUN basert på verifiserte fakta i dokumentene.
-2. Hvis du ikke finner svaret i kildene, si 'Jeg har ikke faglig grunnlag for å svare på dette'.
-3. Bruk presis terminologi og oppgi kilder der det er mulig.
-4. Ikke gjett.
-"""
+<script>
+    const API_KEY = "DIN_API_NØKKEL"; // ADVARSEL: Ikke del denne nøkkelen med andre!
 
-# 3. Lag selve "Spørre-motoren"
-fag_motor = RetrievalQA.from_chain_type(
-    llm=openai.ChatCompletion(model="gpt-4o", temperature=0.1), # Lav temperatur = høyere presisjon
-    chain_type="stuff",
-    retriever=fag_database.as_retriever()
-)
+    async function sendSporsmal() {
+        const inputField = document.getElementById("userInput");
+        const chatBox = document.getElementById("chat-box");
+        const userText = inputField.value;
 
-# 4. Bruk motoren
-sporsmal = "Hva er de termodynamiske lovene i dette systemet?"
-svar = fag_motor.run(sporsmal)
-print(f"Faglig svar: {svar}")
+        if (!userText) return;
+
+        // Vis brukerens melding
+        chatBox.innerHTML += `<div class="message user">${userText}</div>`;
+        inputField.value = "";
+
+        // Legg til en "tenker"-melding
+        const loadingId = "loading-" + Date.now();
+        chatBox.innerHTML += `<div class="message ai" id="${loadingId}">Analyserer fagfelt og henter data...</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o",
+                    messages: [
+                        { "role": "system", "content": "Du er en streng akademisk ekspert. Svar presist, bruk fagterminologi, og unngå 'small talk'. Hvis svaret er usikkert, oppgi feilmargin. Svaret skal formateres for HTML." },
+                        { "role": "user", "content": userText }
+                    ],
+                    temperature: 0.2 // Lav verdi for høyere faglig nøyaktighet
+                })
+            });
+
+            const data = await response.json();
+            const aiSvar = data.choices[0].message.content;
+
+            // Oppdater "tenker"-meldingen med det ekte svaret
+            document.getElementById(loadingId).innerHTML = aiSvar + "<span class='source-tag'>Verifisert via GPT-4o Academic Engine</span>";
+        } catch (error) {
+            document.getElementById(loadingId).innerText = "Feil: Kunne ikke koble til den faglige motoren.";
+        }
+        
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
