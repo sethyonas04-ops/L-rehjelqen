@@ -1,198 +1,34 @@
-<!DOCTYPE html>
-<html lang="no">
-<head>
-<meta charset="UTF-8">
-<title>Lærer Hjelp</title>
+import openai
+from langchain.vectorstores import Chroma
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.chains import RetrievalQA
 
-<style>
-body {
-  margin:0;
-  font-family:Arial;
-  background:linear-gradient(135deg,#667eea,#764ba2);
-  color:white;
-}
+# 1. Last inn faglige kilder (f.eks. PDF-er fra universitetet eller tekniske manualer)
+# Vi simulerer at vi har en "hjerne" full av fagkunnskap her
+faglig_database = Chroma(
+    persist_directory="./fag_kunnskap", 
+    embedding_function=OpenAIEmbeddings()
+)
 
-.view { display:none; }
-.active { display:block; }
+# 2. Sett opp motoren med "Strenge Instrukser"
+# Vi tvinger den til å være akademisk og kildekritisk
+system_instruks = """
+Du er en faglig ekspert-motor. 
+Dine regler:
+1. Svar KUN basert på verifiserte fakta i dokumentene.
+2. Hvis du ikke finner svaret i kildene, si 'Jeg har ikke faglig grunnlag for å svare på dette'.
+3. Bruk presis terminologi og oppgi kilder der det er mulig.
+4. Ikke gjett.
+"""
 
-.card {
-  background:white;
-  color:black;
-  padding:20px;
-  border-radius:15px;
-  margin:10px;
-}
+# 3. Lag selve "Spørre-motoren"
+fag_motor = RetrievalQA.from_chain_type(
+    llm=openai.ChatCompletion(model="gpt-4o", temperature=0.1), # Lav temperatur = høyere presisjon
+    chain_type="stuff",
+    retriever=fag_database.as_retriever()
+)
 
-button {
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  background:#667eea;
-  color:white;
-  cursor:pointer;
-}
-
-button:hover { background:#4c5fd7; }
-
-.topbar {
-  padding:10px;
-  background:black;
-}
-
-</style>
-</head>
-
-<body>
-
-<div class="topbar">
-XP: <span id="xp">0</span> |
-Streak: <span id="streak">0</span>
-</div>
-
-<!-- START -->
-<div id="start" class="view active">
-  <div class="card">
-    <h2>🎓 Velg nivå</h2>
-    <select id="grade">
-      <option>1</option>
-      <option>5</option>
-      <option>10</option>
-      <option>VG1</option>
-      <option>VG2</option>
-      <option>VG3</option>
-    </select>
-    <button onclick="start()">Start</button>
-  </div>
-</div>
-
-<!-- MENY -->
-<div id="menu" class="view">
-  <div class="card">
-    <h2>Velg</h2>
-    <button onclick="show('chat')">🤖 Chat</button>
-    <button onclick="show('quiz')">❓ Quiz</button>
-    <button onclick="show('game1')">🎮 Spill</button>
-  </div>
-</div>
-
-<!-- CHAT -->
-<div id="chat" class="view">
-  <div class="card">
-    <h2>Lærer Hjelp</h2>
-    <textarea id="msg"></textarea>
-    <button onclick="send()">Send</button>
-    <p id="chatOut"></p>
-    <button onclick="back()">←</button>
-  </div>
-</div>
-
-<!-- QUIZ -->
-<div id="quiz" class="view">
-  <div class="card">
-    <h2>Quiz</h2>
-    <p id="q"></p>
-    <input id="ans">
-    <button onclick="check()">Svar</button>
-    <p id="res"></p>
-    <button onclick="back()">←</button>
-  </div>
-</div>
-
-<!-- SPILL 1 -->
-<div id="game1" class="view">
-  <div class="card">
-    <h2>Matte battle</h2>
-    <p id="mathQ"></p>
-    <input id="mathA">
-    <button onclick="checkMath()">Svar</button>
-    <button onclick="back()">←</button>
-  </div>
-</div>
-
-<script>
-let grade;
-let xp=0;
-let streak=0;
-
-// NAV
-function show(id){
- document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
- document.getElementById(id).classList.add("active");
-}
-function back(){ show("menu"); }
-function start(){
- grade=document.getElementById("grade").value;
- show("menu");
-}
-
-// AI
-async function send(){
- let msg=document.getElementById("msg").value;
- document.getElementById("chatOut").innerText="Tenker...";
-
- let res=await fetch("http://localhost:3000/ai",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({message:msg,grade})
- });
-
- let data=await res.json();
- document.getElementById("chatOut").innerText=data.reply;
-}
-
-// QUIZ SYSTEM
-let currentQ;
-function newQ(){
- let a=Math.floor(Math.random()*10);
- let b=Math.floor(Math.random()*10);
- currentQ=a+b;
- document.getElementById("q").innerText=`Hva er ${a}+${b}?`;
-}
-newQ();
-
-function check(){
- let val=parseInt(document.getElementById("ans").value);
- if(val===currentQ){
-  streak++;
-  xp+=10*streak;
-  document.getElementById("res").innerText="Riktig!";
- } else {
-  streak=0;
-  document.getElementById("res").innerText="Feil!";
- }
- updateStats();
- newQ();
-}
-
-// GAME
-let mathAnswer;
-function newMath(){
- let a=Math.floor(Math.random()*20);
- let b=Math.floor(Math.random()*20);
- mathAnswer=a*b;
- document.getElementById("mathQ").innerText=`${a} × ${b}`;
-}
-newMath();
-
-function checkMath(){
- let val=parseInt(document.getElementById("mathA").value);
- if(val===mathAnswer){
-  xp+=20;
-  document.getElementById("mathQ").innerText="🔥 Riktig!";
- } else {
-  document.getElementById("mathQ").innerText="❌ Feil!";
- }
- updateStats();
- newMath();
-}
-
-// STATS
-function updateStats(){
- document.getElementById("xp").innerText=xp;
- document.getElementById("streak").innerText=streak;
-}
-</script>
-
-</body>
-</html>
-
+# 4. Bruk motoren
+sporsmal = "Hva er de termodynamiske lovene i dette systemet?"
+svar = fag_motor.run(sporsmal)
+print(f"Faglig svar: {svar}")
